@@ -19,6 +19,10 @@ o2:
 #===============================================================================
 # docker compose
 #===============================================================================
+.PHONY: in
+in:
+	docker compose exec webapp bash
+
 .PHONY: build
 build:
 	docker compose build --no-cache
