@@ -1,0 +1,12 @@
+services:
+  webapp:
+    container_name: webapp
+    build:
+      context: ./webapp
+      dockerfile: Dockerfile
+    ports:
+      - $WEBAPP_PORT:$WEBAPP_PORT
+    volumes:
+      - ./webapp:/app
+    working_dir: /app
+    command: npx remix vite:dev --host 0.0.0.0 --port $WEBAPP_PORT
