@@ -6,6 +6,10 @@ include .env
 .PHONY: webapp
 webapp:
 	open http://localhost:$(WEBAPP_PORT)
+
+.PHONY: hasura
+hasura:
+	open http://localhost:$(HASURA_PORT)
 #===============================================================================
 
 #===============================================================================
