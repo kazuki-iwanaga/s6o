@@ -1,0 +1,25 @@
+chore:
+  - all:
+      - changed-files:
+          - any-glob-to-any-file:
+              - '.gitignore'
+              - 'README.md'
+              - 'Makefile'
+              - 'compose.yaml'
+              - '.env'
+  - base-branch:
+      - 'main'
+github:
+  - all:
+      - changed-files:
+          - any-glob-to-any-file:
+              - '.github/**'
+  - base-branch:
+      - 'main'
+webapp:
+  - all:
+      - changed-files:
+          - any-glob-to-any-file:
+              - 'webapp/**'
+  - base-branch:
+      - 'main'
