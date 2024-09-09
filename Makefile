@@ -37,7 +37,7 @@ down:
 
 .PHONY: ps
 ps:
-	docker compose ps
+	docker compose ps -a
 
 .PHONY: logs
 logs:
