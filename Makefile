@@ -11,6 +11,10 @@ webapp:
 hasura:
 	open http://localhost:$(HASURA_PORT)
 
+.PHONY: flagsmith
+flagsmith:
+	open http://localhost:$(FLAGSMITH_PORT)
+
 .PHONY: o2
 o2:
 	open http://localhost:$(O2_HTTP_PORT)
