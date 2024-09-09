@@ -11,9 +11,9 @@ webapp:
 hasura:
 	open http://localhost:$(HASURA_PORT)
 
-.PHONY: flagsmith
-flagsmith:
-	open http://localhost:$(FLAGSMITH_PORT)
+.PHONY: unleash
+unleash:
+	open http://localhost:$(UNLEASH_PORT)
 
 .PHONY: o2
 o2:
