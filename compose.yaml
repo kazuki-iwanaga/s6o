@@ -1,0 +1,112 @@
+services:
+  webapp:
+    container_name: webapp
+    build:
+      context: ./webapp
+      dockerfile: Dockerfile
+    ports:
+      - $WEBAPP_PORT:$WEBAPP_PORT
+    volumes:
+      - /app/node_modules
+      - ./webapp:/app
+    working_dir: /app
+    command: npx remix vite:dev --host 0.0.0.0 --port $WEBAPP_PORT
+  hasura-db:
+    container_name: hasura-db
+    image: postgres:$HASURA_POSTGRES_VERSION
+    restart: always
+    shm_size: 128mb
+    environment:
+      POSTGRES_USER: $HASURA_POSTGRES_USER
+      POSTGRES_PASSWORD: $HASURA_POSTGRES_PASSWORD
+      POSTGRES_DB: $HASURA_POSTGRES_DB
+      PGPORT: $HASURA_POSTGRES_PORT
+  hasura:
+    # https://hasura.io/docs/2.0/getting-started/docker-simple/
+    container_name: hasura
+    image: hasura/graphql-engine:v$HASURA_VERSION
+    ports:
+      - $HASURA_PORT:$HASURA_PORT
+    restart: always
+    environment:
+      HASURA_GRAPHQL_SERVER_PORT: $HASURA_PORT
+      ## postgres database to store Hasura metadata
+      HASURA_GRAPHQL_METADATA_DATABASE_URL: postgres://$HASURA_POSTGRES_USER:$HASURA_POSTGRES_PASSWORD@hasura-db:$HASURA_POSTGRES_PORT/$HASURA_POSTGRES_DB
+      ## this env var can be used to add the above postgres database to Hasura as a data source. this can be removed/updated based on your needs
+      PG_DATABASE_URL: postgres://$HASURA_POSTGRES_USER:$HASURA_POSTGRES_PASSWORD@hasura-db:$HASURA_POSTGRES_PORT/$HASURA_POSTGRES_DB
+      ## enable the console served by server
+      HASURA_GRAPHQL_ENABLE_CONSOLE: "true" # set to "false" to disable console
+      ## enable debugging mode. It is recommended to disable this in production
+      HASURA_GRAPHQL_DEV_MODE: "true"
+      HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log, websocket-log, query-log
+      ## uncomment next line to run console offline (i.e load console assets from server instead of CDN)
+      # HASURA_GRAPHQL_CONSOLE_ASSETS_DIR: /srv/console-assets
+      ## uncomment next line to set an admin secret
+      # HASURA_GRAPHQL_ADMIN_SECRET: myadminsecretkey
+    depends_on:
+      - hasura-db
+  unleash-db:
+    container_name: unleash-db
+    image: postgres:$UNLEASH_POSTGRES_VERSION
+    restart: always
+    shm_size: 128mb
+    environment:
+      POSTGRES_USER: $UNLEASH_POSTGRES_USER
+      POSTGRES_PASSWORD: $UNLEASH_POSTGRES_PASSWORD
+      POSTGRES_DB: $UNLEASH_POSTGRES_DB
+      PGPORT: $UNLEASH_POSTGRES_PORT
+  unleash:
+    # https://github.com/Unleash/unleash/blob/main/docker-compose.yml
+    container_name: unleash
+    image: unleashorg/unleash-server:$UNLEASH_VERSION
+    environment:
+      DATABASE_URL: postgres://$UNLEASH_POSTGRES_USER:$UNLEASH_POSTGRES_PASSWORD@unleash-db:$UNLEASH_POSTGRES_PORT/$UNLEASH_POSTGRES_DB
+      DATABASE_SSL: "false"
+      # Proxy clients must use one of these keys to connect to the
+      # Proxy. To add more keys, separate them with a comma (`key1,key2`).
+      INIT_FRONTEND_API_TOKENS: $UNLEASH_FRONTEND_API_TOKENS
+      # Initialize Unleash with a default set of client API tokens. To
+      # initialize Unleash with multiple tokens, separate them with a
+      # comma (`token1,token2`).
+      INIT_CLIENT_API_TOKENS: $UNLEASH_CLIENT_API_TOKENS
+      # https://github.com/Unleash/terraform-provider-unleash/blob/main/examples/staged/docker-compose.yml
+      INIT_ADMIN_API_TOKENS: $UNLEASH_ADMIN_API_TOKENS
+      # https://docs.getunleash.io/using-unleash/deploy/configuring-unleash
+      HTTP_PORT: $UNLEASH_PORT
+      AUTH_TYPE: demo
+      # When AUTH_TYPE is set to "open-source"
+      # UNLEASH_DEFAULT_ADMIN_USERNAME: $UNLEASH_USER
+      # UNLEASH_DEFAULT_ADMIN_PASSWORD: $UNLEASH_PASSWORD
+      AUTH_DEMO_ALLOW_ADMIN_LOGIN: "true"
+    ports:
+      - $UNLEASH_PORT:$UNLEASH_PORT
+    depends_on:
+      - unleash-db
+  otelcol:
+    # https://opentelemetry.io/docs/collector/installation/#docker-compose
+    container_name: otelcol
+    image: otel/opentelemetry-collector-contrib:$OTELCOL_VERSION
+    volumes:
+      - ./otelcol.yaml:/etc/otelcol-contrib/config.yaml
+    environment:
+      - OTELCOL_GRPC_PORT=$OTELCOL_GRPC_PORT
+      - OTELCOL_HTTP_PORT=$OTELCOL_HTTP_PORT
+      - O2_GRPC_PORT=$O2_GRPC_PORT
+      - O2_AUTH_TOKEN=$O2_AUTH_TOKEN
+      - O2_ORG=$O2_ORG
+      - O2_STREAM=$O2_STREAM
+    depends_on:
+      - o2
+  o2:
+    # https://openobserve.ai/docs/guide/quickstart/#self-hosted-installation
+    container_name: o2
+    image: public.ecr.aws/zinclabs/openobserve:v$O2_VERSION
+    ports:
+      - $O2_HTTP_PORT:$O2_HTTP_PORT
+    environment:
+      - ZO_ROOT_USER_EMAIL=$O2_USER
+      - ZO_ROOT_USER_PASSWORD=$O2_PASSWORD
+      - ZO_HTTP_PORT=$O2_HTTP_PORT
+      - ZO_GRPC_PORT=$O2_GRPC_PORT
+      # Send anonymous telemetry info for improving OpenObserve. You can disable by set it to false
+      - ZO_TELEMETRY=false
